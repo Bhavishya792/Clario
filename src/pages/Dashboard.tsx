@@ -1,0 +1,216 @@
+import { useState } from "react";
+import { Calendar, FileText, AlertTriangle, BarChart3, Upload, Users, Bell, Settings } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+
+const Dashboard = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [riskScore] = useState(72);
+  
+  const upcomingDeadlines = [
+    { title: "GST Filing", date: "Sep 30, 2025", daysLeft: 5, priority: "high", color: "bg-destructive" },
+    { title: "Trademark Renewal", date: "Oct 15, 2025", daysLeft: 20, priority: "medium", color: "bg-warning" },
+    { title: "Contract Review", date: "Oct 8, 2025", daysLeft: 13, priority: "low", color: "bg-success" },
+    { title: "Board Resolution", date: "Nov 2, 2025", daysLeft: 38, priority: "medium", color: "bg-warning" },
+  ];
+
+  const quickActions = [
+    { title: "Document Assistant", icon: FileText, description: "Generate legal documents", action: () => navigate('/documents') },
+    { title: "Schedule Consultation", icon: Calendar, description: "Book time with lawyer", action: () => toast({ title: "Consultation Booking", description: "Consultation scheduling feature coming soon!" }) },
+    { title: "View Reports", icon: BarChart3, description: "Legal health reports", action: () => navigate('/reports') },
+  ];
+
+  const handleUpload = () => {
+    toast({
+      title: "Document Upload",
+      description: "File upload functionality will be available soon!",
+    });
+  };
+
+  const generateHealthCheckup = () => {
+    toast({
+      title: "Generating Legal Health Checkup",
+      description: "Your comprehensive legal health report is being prepared...",
+    });
+  };
+
+  return (
+    <div className="p-6 space-y-6 bg-gradient-to-br from-background via-secondary/20 to-background min-h-screen">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Welcome, Startup!</h1>
+          <p className="text-muted-foreground">Here's your legal health overview</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="icon" onClick={() => toast({ title: "Notifications", description: "No new notifications" })}>
+            <Bell className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => toast({ title: "Settings", description: "Settings panel coming soon!" })}>
+            <Settings className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => toast({ title: "Team Management", description: "Team features coming soon!" })}>
+            <Users className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="legal-card">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <FileText className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-2xl font-bold">24</p>
+                <p className="text-sm text-muted-foreground">Documents</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="legal-card">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-8 w-8 text-warning" />
+              <div>
+                <p className="text-2xl font-bold">7</p>
+                <p className="text-sm text-muted-foreground">Deadlines</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="legal-card">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+              <div>
+                <p className="text-2xl font-bold">2</p>
+                <p className="text-sm text-muted-foreground">High Priority</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="legal-card">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <BarChart3 className="h-8 w-8 text-success" />
+              <div>
+                <p className="text-2xl font-bold">92%</p>
+                <p className="text-sm text-muted-foreground">Compliance</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Document Upload Section */}
+        <Card className="legal-card lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5 text-primary" />
+              Upload Document
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
+              <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">Upload your legal documents</h3>
+              <p className="text-muted-foreground mb-4">Drag and drop files here, or click to browse</p>
+              <Button variant="professional" onClick={handleUpload}>Upload Document</Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Legal Risk Score */}
+        <Card className="legal-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-warning" />
+              Legal Risk Score
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-success mb-2">{riskScore}</div>
+              <p className="text-sm text-muted-foreground mb-4">out of 100</p>
+              <Progress value={riskScore} className="mb-4" />
+              <p className="text-sm font-medium text-success">Good legal health</p>
+              <Button variant="outline" className="w-full mt-4" onClick={generateHealthCheckup}>
+                Generate Legal Health Checkup
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Upcoming Deadlines */}
+        <Card className="legal-card lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                Upcoming Deadlines
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/deadlines')}>View All →</Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {upcomingDeadlines.map((deadline, index) => (
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${deadline.color}`}></div>
+                    <div>
+                      <p className="font-medium">{deadline.title}</p>
+                      <p className="text-sm text-muted-foreground">{deadline.date}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">{deadline.daysLeft} days</p>
+                    <p className="text-xs text-muted-foreground">remaining</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card className="legal-card">
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {quickActions.map((action, index) => (
+                <Button
+                  key={index}
+                  variant="ghost"
+                  className="w-full justify-start h-auto p-3"
+                  onClick={action.action}
+                >
+                  <action.icon className="h-5 w-5 mr-3 text-primary" />
+                  <div className="text-left">
+                    <p className="font-medium">{action.title}</p>
+                    <p className="text-xs text-muted-foreground">{action.description}</p>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
