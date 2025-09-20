@@ -1,0 +1,25 @@
+# Server Configuration
+PORT=3001
+NODE_ENV=development
+
+# Database
+MONGODB_URI=mongodb://localhost:27017/clario
+MONGODB_TEST_URI=mongodb://localhost:27017/clario_test
+
+# JWT Secret
+JWT_SECRET=clario-super-secret-jwt-key-2024-legal-platform
+JWT_EXPIRES_IN=7d
+
+# OpenAI Configuration
+OPENAI_API_KEY=your-openai-api-key-here
+
+# File Upload
+MAX_FILE_SIZE=10485760
+UPLOAD_PATH=./uploads
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# CORS
+FRONTEND_URL=http://localhost:8080

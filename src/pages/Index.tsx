@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { Scale, BarChart3, Calendar, FileText, Users, ArrowRight, CheckCircle } from "lucide-react";
+import { BarChart3, Calendar, FileText, Users, ArrowRight, CheckCircle, MessageSquare, AlertTriangle, Eye, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ClarioLogo from "@/components/ClarioLogo";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -30,6 +31,30 @@ const Index = () => {
       color: "text-accent",
       bgColor: "bg-accent/10",
       path: "/documents"
+    },
+    {
+      icon: MessageSquare,
+      title: "AI Chat",
+      description: "Clause-by-clause analysis with AI-powered legal insights.",
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+      path: "/ai-chat"
+    },
+    {
+      icon: AlertTriangle,
+      title: "Clause Checker",
+      description: "AI standard clause checker with risk level warnings.",
+      color: "text-destructive",
+      bgColor: "bg-destructive/10",
+      path: "/clause-checker"
+    },
+    {
+      icon: Eye,
+      title: "Side-by-Side View",
+      description: "Compare original vs simplified legal documents.",
+      color: "text-success",
+      bgColor: "bg-success/10",
+      path: "/side-by-side"
     }
   ];
 
@@ -39,7 +64,11 @@ const Index = () => {
     "Monitor your legal risk score",
     "Never miss important compliance dates",
     "Access pre-built legal templates",
-    "Get proactive legal health insights"
+    "Get proactive legal health insights",
+    "AI-powered clause-by-clause analysis",
+    "Standard clause checking with risk assessment",
+    "Side-by-side document comparison",
+    "Comprehensive legal terms glossary"
   ];
 
   return (
@@ -48,10 +77,7 @@ const Index = () => {
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Scale className="h-8 w-8 text-primary" />
-              <span className="font-bold text-xl">Legal Life Organizer</span>
-            </div>
+            <ClarioLogo size="md" />
             <Button variant="outline" onClick={() => navigate("/dashboard")}>
               Login
             </Button>
@@ -63,14 +89,14 @@ const Index = () => {
       <section className="container mx-auto px-6 py-20 text-center">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Legal Life Organizer
+            Clario
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             Your comprehensive legal health dashboard. Track deadlines, manage documents, and stay compliant.
           </p>
           
           {/* Feature Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             {features.map((feature, index) => (
               <Card key={index} className="legal-card hover:shadow-lg transition-all duration-300 cursor-pointer group" onClick={() => navigate(feature.path)}>
                 <CardHeader>
@@ -116,7 +142,7 @@ const Index = () => {
                 className="w-64 h-12"
                 onClick={() => navigate("/dashboard")}
               >
-                <Scale className="h-5 w-5 mr-2" />
+                <User className="h-5 w-5 mr-2" />
                 Login as Individual
               </Button>
             </div>
@@ -130,7 +156,7 @@ const Index = () => {
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold text-center mb-12">What's Inside</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               <div className="text-center">
                 <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-6">
                   <BarChart3 className="h-8 w-8 text-primary" />
@@ -160,6 +186,36 @@ const Index = () => {
                   AI-powered legal document creation
                 </p>
               </div>
+
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                  <MessageSquare className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-4">AI Chat Assistant</h3>
+                <p className="text-muted-foreground">
+                  Clause-by-clause analysis with AI insights
+                </p>
+              </div>
+
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-lg bg-destructive/10 flex items-center justify-center mx-auto mb-6">
+                  <AlertTriangle className="h-8 w-8 text-destructive" />
+                </div>
+                <h3 className="text-xl font-semibold mb-4">Clause Checker</h3>
+                <p className="text-muted-foreground">
+                  AI-powered standard clause verification
+                </p>
+              </div>
+
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-lg bg-success/10 flex items-center justify-center mx-auto mb-6">
+                  <Eye className="h-8 w-8 text-success" />
+                </div>
+                <h3 className="text-xl font-semibold mb-4">Side-by-Side View</h3>
+                <p className="text-muted-foreground">
+                  Compare original vs simplified documents
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -168,9 +224,9 @@ const Index = () => {
       {/* Benefits Section */}
       <section className="container mx-auto px-6 py-16">
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Why Choose Legal Life Organizer?</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Why Choose Clario?</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {benefits.map((benefit, index) => (
               <div key={index} className="flex items-center gap-3">
                 <CheckCircle className="h-5 w-5 text-success flex-shrink-0" />
@@ -184,11 +240,10 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t border-border bg-card/50 py-8">
         <div className="container mx-auto px-6 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Scale className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg">Legal Life Organizer</span>
+          <div className="flex items-center justify-center mb-4">
+            <ClarioLogo size="sm" />
           </div>
-          <p className="text-muted-foreground">© 2025 Legal Life Organizer. Prototype Demo.</p>
+          <p className="text-muted-foreground">© 2025 Clario. Legal Life Organizer.</p>
         </div>
       </footer>
     </div>

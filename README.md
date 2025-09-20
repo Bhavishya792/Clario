@@ -1,8 +1,8 @@
-# Welcome to your Lovable project
+# Clario - Legal Life Organizer
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/b1e034bd-fc6e-4777-8ff5-1878b608b918
+**Clario** is a comprehensive legal management platform that helps startups and individuals manage their legal health with AI-powered tools.
 
 ## How can I edit this code?
 

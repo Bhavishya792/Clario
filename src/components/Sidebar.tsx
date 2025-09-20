@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Scale, LayoutDashboard, Calendar, FileText, AlertTriangle, BarChart3, Menu, X } from "lucide-react";
+import { LayoutDashboard, Calendar, FileText, AlertTriangle, BarChart3, Menu, X, MessageSquare, BookOpen, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import ClarioLogo from "@/components/ClarioLogo";
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -12,7 +13,10 @@ const Sidebar = () => {
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: Calendar, label: "Deadlines", path: "/deadlines" },
     { icon: FileText, label: "Documents", path: "/documents" },
-    { icon: AlertTriangle, label: "Risk Score", path: "/risk" },
+    { icon: MessageSquare, label: "AI Chat", path: "/ai-chat" },
+    { icon: AlertTriangle, label: "Clause Checker", path: "/clause-checker" },
+    { icon: Eye, label: "Side-by-Side", path: "/side-by-side" },
+    { icon: BookOpen, label: "Glossary", path: "/glossary" },
     { icon: BarChart3, label: "Reports", path: "/reports" },
   ];
 
@@ -26,12 +30,7 @@ const Sidebar = () => {
       {/* Header */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between">
-          {!isCollapsed && (
-            <div className="flex items-center gap-2">
-              <Scale className="h-6 w-6 text-primary" />
-              <span className="font-bold text-lg">Legal Life</span>
-            </div>
-          )}
+          {!isCollapsed && <ClarioLogo size="sm" />}
           <Button
             variant="ghost"
             size="icon"
@@ -69,7 +68,7 @@ const Sidebar = () => {
       {!isCollapsed && (
         <div className="p-4 border-t border-border">
           <div className="text-center">
-            <p className="text-xs text-muted-foreground">© 2025 Legal Life Organizer</p>
+            <p className="text-xs text-muted-foreground">© 2025 Clario</p>
             <p className="text-xs text-muted-foreground">Prototype Demo</p>
           </div>
         </div>
