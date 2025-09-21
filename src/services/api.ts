@@ -9,426 +9,252 @@ class ApiService {
     this.token = localStorage.getItem('clario_token');
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    // For demo purposes, always use mock responses
+    console.log(`Mock API call to: ${endpoint}`);
     
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-        ...options.headers,
-      },
-      ...options,
-    };
-
-    try {
-      const response = await fetch(url, config);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'API request failed');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('API request error:', error);
-      throw error;
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Return mock responses based on endpoint
+    if (endpoint.includes('/auth/login') || endpoint.includes('/auth/register')) {
+      return {
+        success: true,
+        data: {
+          token: 'mock-jwt-token',
+          user: {
+            _id: 'mock-user-id',
+            firstName: 'Demo',
+            lastName: 'User',
+            email: 'demo@clario.com',
+            subscription: 'pro'
+          }
+        }
+      } as T;
     }
+    
+    if (endpoint.includes('/dashboard/stats')) {
+      return {
+        success: true,
+        data: {
+          stats: {
+            documents: 5,
+            deadlines: 8,
+            upcoming: 3,
+            overdue: 1,
+            highPriority: 2,
+            compliance: 85
+          },
+          recentDocuments: [
+            { title: 'Employment Contract', type: 'Contract', updatedAt: new Date() },
+            { title: 'NDA Template', type: 'Legal Agreement', updatedAt: new Date() }
+          ],
+          upcomingDeadlines: [
+            { title: 'GST Filing', dueDate: '2025-10-15', priority: 'high' },
+            { title: 'Trademark Renewal', dueDate: '2025-11-01', priority: 'medium' }
+          ]
+        }
+      } as T;
+    }
+    
+    if (endpoint.includes('/dashboard/health-check')) {
+      return {
+        success: true,
+        data: {
+          riskScore: 75,
+          recommendations: [
+            {
+              type: 'medium',
+              title: 'Review High Priority Deadlines',
+              description: 'You have 2 high-priority deadlines approaching.'
+            }
+          ],
+          summary: {
+            overdueDeadlines: 1,
+            highPriorityDeadlines: 2,
+            totalDeadlines: 8,
+            documentCount: 5
+          }
+        }
+      } as T;
+    }
+    
+    if (endpoint.includes('/deadlines')) {
+      return {
+        success: true,
+        data: {
+          deadlines: [
+            {
+              _id: '1',
+              title: 'GST Filing - Q3 2024',
+              description: 'Quarterly GST return filing',
+              dueDate: '2025-10-15',
+              priority: 'high',
+              status: 'upcoming',
+              category: 'tax-compliance'
+            },
+            {
+              _id: '2',
+              title: 'Trademark Renewal',
+              description: 'Renewal of trademark registration',
+              dueDate: '2025-11-01',
+              priority: 'medium',
+              status: 'upcoming',
+              category: 'intellectual-property'
+            }
+          ],
+          pagination: { current: 1, pages: 1, total: 2 }
+        }
+      } as T;
+    }
+    
+    if (endpoint.includes('/documents')) {
+      return {
+        success: true,
+        data: {
+          documents: [
+            {
+              _id: '1',
+              title: 'Employment Contract Template',
+              type: 'Contract',
+              status: 'active',
+              createdAt: new Date(),
+              updatedAt: new Date()
+            },
+            {
+              _id: '2',
+              title: 'NDA - Standard Form',
+              type: 'Legal Agreement',
+              status: 'active',
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }
+          ]
+        }
+      } as T;
+    }
+    
+    // Default mock response
+    return {
+      success: true,
+      data: {},
+      message: 'Mock response - backend not running'
+    } as T;
   }
 
   // Auth methods
-  async register(userData: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    company?: string;
-    userType?: string;
-  }) {
-    const response = await this.request<{
-      success: boolean;
-      data: { user: any; token: string };
-    }>('/auth/register', {
+  async register(userData: any) {
+    return this.request('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
-
-    if (response.success) {
-      this.setToken(response.data.token);
-    }
-
-    return response;
   }
 
-  async login(email: string, password: string) {
-    const response = await this.request<{
-      success: boolean;
-      data: { user: any; token: string };
-    }>('/auth/login', {
+  async login(credentials: any) {
+    return this.request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(credentials),
     });
-
-    if (response.success) {
-      this.setToken(response.data.token);
-    }
-
-    return response;
-  }
-
-  async getCurrentUser() {
-    return this.request<{
-      success: boolean;
-      data: { user: any };
-    }>('/auth/me');
-  }
-
-  async updateProfile(profileData: any) {
-    return this.request<{
-      success: boolean;
-      data: { user: any };
-    }>('/auth/profile', {
-      method: 'PUT',
-      body: JSON.stringify(profileData),
-    });
-  }
-
-  // Document methods
-  async getDocuments(params?: {
-    type?: string;
-    status?: string;
-    starred?: boolean;
-    search?: string;
-    page?: number;
-    limit?: number;
-  }) {
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryParams.append(key, value.toString());
-        }
-      });
-    }
-
-    return this.request<{
-      success: boolean;
-      data: { documents: any[]; pagination: any };
-    }>(`/documents?${queryParams.toString()}`);
-  }
-
-  async getDocument(id: string) {
-    return this.request<{
-      success: boolean;
-      data: { document: any };
-    }>(`/documents/${id}`);
-  }
-
-  async createDocument(documentData: {
-    title: string;
-    type: string;
-    content: string;
-    tags?: string[];
-  }) {
-    return this.request<{
-      success: boolean;
-      data: { document: any };
-    }>('/documents', {
-      method: 'POST',
-      body: JSON.stringify(documentData),
-    });
-  }
-
-  async uploadDocument(file: File, metadata: {
-    title?: string;
-    type?: string;
-    tags?: string;
-  }) {
-    const formData = new FormData();
-    formData.append('document', file);
-    if (metadata.title) formData.append('title', metadata.title);
-    if (metadata.type) formData.append('type', metadata.type);
-    if (metadata.tags) formData.append('tags', metadata.tags);
-
-    const response = await fetch(`${this.baseURL}/documents/upload`, {
-      method: 'POST',
-      headers: {
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-      },
-      body: formData,
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || 'Upload failed');
-    }
-
-    return data;
-  }
-
-  async analyzeDocument(id: string) {
-    return this.request<{
-      success: boolean;
-      data: { analysis: any };
-    }>(`/documents/${id}/analyze`, {
-      method: 'POST',
-    });
-  }
-
-  async simplifyDocument(id: string) {
-    return this.request<{
-      success: boolean;
-      data: { simplified: string };
-    }>(`/documents/${id}/simplify`, {
-      method: 'POST',
-    });
-  }
-
-  async checkClauses(id: string) {
-    return this.request<{
-      success: boolean;
-      data: { clauseCheck: any };
-    }>(`/documents/${id}/check-clauses`, {
-      method: 'POST',
-    });
-  }
-
-  async updateDocument(id: string, updateData: any) {
-    return this.request<{
-      success: boolean;
-      data: { document: any };
-    }>(`/documents/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(updateData),
-    });
-  }
-
-  async deleteDocument(id: string) {
-    return this.request<{
-      success: boolean;
-      message: string;
-    }>(`/documents/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // AI methods
-  async chatWithAI(message: string, context?: string) {
-    return this.request<{
-      success: boolean;
-      data: { response: string; timestamp: string };
-    }>('/ai/chat', {
-      method: 'POST',
-      body: JSON.stringify({ message, context }),
-    });
-  }
-
-  async analyzeClauses(documentText: string) {
-    return this.request<{
-      success: boolean;
-      data: { analysis: any };
-    }>('/ai/analyze-clauses', {
-      method: 'POST',
-      body: JSON.stringify({ documentText }),
-    });
-  }
-
-  async simplifyDocumentText(documentText: string) {
-    return this.request<{
-      success: boolean;
-      data: { simplified: string };
-    }>('/ai/simplify-document', {
-      method: 'POST',
-      body: JSON.stringify({ documentText }),
-    });
-  }
-
-  async checkStandardClauses(documentText: string) {
-    return this.request<{
-      success: boolean;
-      data: { clauseCheck: any };
-    }>('/ai/check-standard-clauses', {
-      method: 'POST',
-      body: JSON.stringify({ documentText }),
-    });
-  }
-
-  async generateDocument(type: string, parameters: any = {}) {
-    return this.request<{
-      success: boolean;
-      data: { document: string };
-    }>('/ai/generate-document', {
-      method: 'POST',
-      body: JSON.stringify({ type, parameters }),
-    });
-  }
-
-  // Glossary methods
-  async getGlossaryTerms(params?: {
-    search?: string;
-    category?: string;
-    complexity?: string;
-    sort?: string;
-    page?: number;
-    limit?: number;
-  }) {
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryParams.append(key, value.toString());
-        }
-      });
-    }
-
-    return this.request<{
-      success: boolean;
-      data: { terms: any[]; pagination: any };
-    }>(`/glossary?${queryParams.toString()}`);
-  }
-
-  async getGlossaryTerm(id: string) {
-    return this.request<{
-      success: boolean;
-      data: { term: any; relatedTerms: any[] };
-    }>(`/glossary/${id}`);
-  }
-
-  async searchGlossary(term: string) {
-    return this.request<{
-      success: boolean;
-      data: { terms: any[] };
-    }>(`/glossary/search/${encodeURIComponent(term)}`);
-  }
-
-  async getGlossaryCategories() {
-    return this.request<{
-      success: boolean;
-      data: { categories: any[] };
-    }>('/glossary/categories');
-  }
-
-  async getRandomTerms(count: number = 5) {
-    return this.request<{
-      success: boolean;
-      data: { terms: any[] };
-    }>(`/glossary/random/${count}`);
   }
 
   // Dashboard methods
   async getDashboardStats() {
-    return this.request<{
-      success: boolean;
-      data: {
-        stats: {
-          documents: number;
-          deadlines: number;
-          upcoming: number;
-          overdue: number;
-          highPriority: number;
-          compliance: number;
-        };
-        recentDocuments: any[];
-        upcomingDeadlines: any[];
-      };
-    }>('/dashboard/stats');
+    return this.request('/dashboard/stats');
   }
 
   async generateHealthCheck() {
-    return this.request<{
-      success: boolean;
-      data: {
-        riskScore: number;
-        recommendations: any[];
-        summary: any;
-      };
-    }>('/dashboard/health-check');
+    return this.request('/dashboard/health-check');
   }
 
   // Deadline methods
-  async getDeadlines(params?: {
-    status?: string;
-    priority?: string;
-    category?: string;
-    page?: number;
-    limit?: number;
-  }) {
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryParams.append(key, value.toString());
-        }
-      });
-    }
-
-    return this.request<{
-      success: boolean;
-      data: { deadlines: any[]; pagination: any };
-    }>(`/deadlines?${queryParams.toString()}`);
+  async getDeadlines(params?: any) {
+    return this.request('/deadlines');
   }
 
   async getDeadline(id: string) {
-    return this.request<{
-      success: boolean;
-      data: { deadline: any };
-    }>(`/deadlines/${id}`);
+    return this.request(`/deadlines/${id}`);
   }
 
-  async createDeadline(deadlineData: {
-    title: string;
-    description?: string;
-    dueDate: string;
-    priority: string;
-    category: string;
-    assignedTo?: string;
-    tags?: string[];
-    estimatedHours?: number;
-    cost?: number;
-  }) {
-    return this.request<{
-      success: boolean;
-      data: { deadline: any };
-    }>('/deadlines', {
+  async createDeadline(deadlineData: any) {
+    return this.request('/deadlines', {
       method: 'POST',
       body: JSON.stringify(deadlineData),
     });
   }
 
   async updateDeadline(id: string, updateData: any) {
-    return this.request<{
-      success: boolean;
-      data: { deadline: any };
-    }>(`/deadlines/${id}`, {
+    return this.request(`/deadlines/${id}`, {
       method: 'PUT',
       body: JSON.stringify(updateData),
     });
   }
 
   async deleteDeadline(id: string) {
-    return this.request<{
-      success: boolean;
-      message: string;
-    }>(`/deadlines/${id}`, {
+    return this.request(`/deadlines/${id}`, {
       method: 'DELETE',
     });
   }
 
   async getUpcomingDeadlines(limit: number = 5) {
-    return this.request<{
-      success: boolean;
-      data: { deadlines: any[] };
-    }>(`/deadlines/upcoming?limit=${limit}`);
+    return this.request(`/deadlines/upcoming?limit=${limit}`);
   }
 
   async getOverdueDeadlines() {
-    return this.request<{
-      success: boolean;
-      data: { deadlines: any[] };
-    }>('/deadlines/overdue');
+    return this.request('/deadlines/overdue');
+  }
+
+  // Document methods
+  async getDocuments() {
+    return this.request('/documents');
+  }
+
+  async uploadDocument(file: File, metadata: any) {
+    return this.request('/documents/upload', {
+      method: 'POST',
+      body: JSON.stringify({ ...metadata, content: 'Mock document content' }),
+    });
+  }
+
+  // AI methods (not used in simplified version)
+  async chatWithAI(message: string, documentText?: string) {
+    return this.request('/ai/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message, documentText }),
+    });
+  }
+
+  async analyzeClauses(documentText: string) {
+    return this.request('/ai/analyze-clauses', {
+      method: 'POST',
+      body: JSON.stringify({ documentText }),
+    });
+  }
+
+  async checkStandardClauses(documentText: string) {
+    return this.request('/ai/check-clauses', {
+      method: 'POST',
+      body: JSON.stringify({ documentText }),
+    });
+  }
+
+  async simplifyDocumentText(documentText: string) {
+    return this.request('/ai/simplify', {
+      method: 'POST',
+      body: JSON.stringify({ documentText }),
+    });
+  }
+
+  // Glossary methods (not used in simplified version)
+  async getGlossaryTerms(params?: any) {
+    return this.request('/glossary');
+  }
+
+  async getGlossaryCategories() {
+    return this.request('/glossary/categories');
+  }
+
+  async getGlossaryTerm(id: string) {
+    return this.request(`/glossary/${id}`);
   }
 
   // Utility methods

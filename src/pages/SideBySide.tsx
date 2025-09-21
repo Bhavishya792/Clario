@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, FileText, Upload, Download, Copy, RotateCcw, Maximize2, Minimize2 } from "lucide-react";
+import { Eye, FileText, Upload, Copy, RotateCcw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,27 +7,29 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import apiService from "@/services/api";
-
-interface DocumentVersion {
-  id: string;
-  title: string;
-  content: string;
-  timestamp: Date;
-  type: 'original' | 'simplified' | 'comparison';
-}
 
 const SideBySide = () => {
   const { toast } = useToast();
-  const { isAuthenticated, user } = useAuth();
   const [originalText, setOriginalText] = useState('');
   const [simplifiedText, setSimplifiedText] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState('side-by-side');
-  const [documentVersions, setDocumentVersions] = useState<DocumentVersion[]>([]);
 
-  const generateSimplified = async () => {
+  const sampleDocument = `WHEREAS, the Company, hereinafter referred to as "Company," and the Employee, hereinafter referred to as "Employee," desire to enter into an employment agreement pursuant to the terms and conditions set forth herein;
+
+NOW, THEREFORE, in consideration of the mutual covenants and agreements contained herein, and for other good and valuable consideration, the receipt and sufficiency of which are hereby acknowledged, the parties hereto agree as follows:
+
+1. EMPLOYMENT. The Company hereby employs the Employee, and the Employee hereby accepts employment with the Company, in accordance with the terms and conditions set forth in this Agreement.
+
+2. COMPENSATION. Notwithstanding the foregoing, the Employee shall be entitled to receive a base salary in the amount of $75,000 per annum, payable in accordance with the Company's standard payroll practices.
+
+3. CONFIDENTIALITY. The Employee acknowledges and agrees that, in connection with the Employee's employment hereunder, the Employee will have access to and become acquainted with various trade secrets, proprietary information, and confidential information belonging to the Company.
+
+4. TERMINATION. Either party may terminate this Agreement at any time, with or without cause, by providing written notice to the other party not less than thirty (30) days prior to the effective date of such termination.
+
+5. INDEMNIFICATION. The Employee shall indemnify and hold harmless the Company from and against any and all claims, damages, losses, costs, and expenses, including reasonable attorneys' fees, arising out of or in connection with the Employee's breach of this Agreement.`;
+
+  const generateSimplified = () => {
     if (!originalText.trim()) {
       toast({
         title: "No Document",
@@ -39,9 +41,7 @@ const SideBySide = () => {
 
     setIsGenerating(true);
     
-    // Simulate simplification delay
     setTimeout(() => {
-      // Basic document simplification without API calls
       let simplified = originalText;
       
       // Replace common legal jargon with simpler terms
@@ -90,25 +90,6 @@ const SideBySide = () => {
         .trim();
       
       setSimplifiedText(simplified);
-      
-      // Save versions
-      const versions: DocumentVersion[] = [
-        {
-          id: '1',
-          title: 'Original Document',
-          content: originalText,
-          timestamp: new Date(),
-          type: 'original'
-        },
-        {
-          id: '2',
-          title: 'Simplified Version',
-          content: simplified,
-          timestamp: new Date(),
-          type: 'simplified'
-        }
-      ];
-      setDocumentVersions(versions);
       setActiveTab('side-by-side');
       
       toast({
@@ -120,11 +101,10 @@ const SideBySide = () => {
     }, 2000);
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Simple file reading for demo purposes
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
@@ -148,7 +128,6 @@ const SideBySide = () => {
   const resetDocument = () => {
     setOriginalText('');
     setSimplifiedText('');
-    setDocumentVersions([]);
     toast({
       title: "Document Reset",
       description: "All content has been cleared.",
@@ -156,21 +135,7 @@ const SideBySide = () => {
   };
 
   const loadSampleDocument = () => {
-    const sampleText = `WHEREAS, the Company, hereinafter referred to as "Company," and the Employee, hereinafter referred to as "Employee," desire to enter into an employment agreement pursuant to the terms and conditions set forth herein;
-
-NOW, THEREFORE, in consideration of the mutual covenants and agreements contained herein, and for other good and valuable consideration, the receipt and sufficiency of which are hereby acknowledged, the parties hereto agree as follows:
-
-1. EMPLOYMENT. The Company hereby employs the Employee, and the Employee hereby accepts employment with the Company, in accordance with the terms and conditions set forth in this Agreement.
-
-2. COMPENSATION. Notwithstanding the foregoing, the Employee shall be entitled to receive a base salary in the amount of $75,000 per annum, payable in accordance with the Company's standard payroll practices.
-
-3. CONFIDENTIALITY. The Employee acknowledges and agrees that, in connection with the Employee's employment hereunder, the Employee will have access to and become acquainted with various trade secrets, proprietary information, and confidential information belonging to the Company.
-
-4. TERMINATION. Either party may terminate this Agreement at any time, with or without cause, by providing written notice to the other party not less than thirty (30) days prior to the effective date of such termination.
-
-5. INDEMNIFICATION. The Employee shall indemnify and hold harmless the Company from and against any and all claims, damages, losses, costs, and expenses, including reasonable attorneys' fees, arising out of or in connection with the Employee's breach of this Agreement.`;
-
-    setOriginalText(sampleText);
+    setOriginalText(sampleDocument);
     toast({
       title: "Sample Loaded",
       description: "A sample employment agreement has been loaded.",
@@ -198,8 +163,7 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
           />
           <label htmlFor="file-upload">
             <Button variant="outline" asChild>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload
+              <span><Upload className="h-4 w-4 mr-2" />Upload</span>
             </Button>
           </label>
           <Button variant="outline" onClick={loadSampleDocument}>
@@ -282,18 +246,13 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <h3 className="font-semibold text-foreground">Original Document</h3>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyToClipboard(originalText, 'Original')}
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Maximize2 className="h-3 w-3" />
-                            </Button>
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyToClipboard(originalText, 'Original')}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
                         </div>
                         <ScrollArea className="h-96 w-full border rounded-lg p-4 bg-muted/20">
                           <div className="text-sm whitespace-pre-wrap font-mono">
@@ -306,18 +265,13 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <h3 className="font-semibold text-foreground">Simplified Version</h3>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyToClipboard(simplifiedText, 'Simplified')}
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Maximize2 className="h-3 w-3" />
-                            </Button>
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyToClipboard(simplifiedText, 'Simplified')}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
                         </div>
                         <ScrollArea className="h-96 w-full border rounded-lg p-4 bg-success/5">
                           <div className="text-sm whitespace-pre-wrap">
@@ -381,34 +335,18 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
-                Document Versions
+                Quick Actions
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              {documentVersions.length > 0 ? (
-                <div className="space-y-3">
-                  {documentVersions.map((version) => (
-                    <div key={version.id} className="p-3 border rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-sm">{version.title}</h4>
-                        <Badge variant={version.type === 'original' ? 'outline' : 'default'}>
-                          {version.type}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {version.timestamp.toLocaleTimeString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {version.content.length} characters
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No document versions yet
-                </p>
-              )}
+            <CardContent className="space-y-2">
+              <Button variant="outline" className="w-full justify-start" size="sm" onClick={loadSampleDocument}>
+                <FileText className="h-4 w-4 mr-2" />
+                Load Sample
+              </Button>
+              <Button variant="outline" className="w-full justify-start" size="sm" onClick={resetDocument}>
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Reset Document
+              </Button>
             </CardContent>
           </Card>
 
@@ -436,32 +374,12 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
             </CardContent>
           </Card>
 
-          <Card className="legal-card">
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start" size="sm">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Document
-              </Button>
-              <Button variant="outline" className="w-full justify-start" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Export Both
-              </Button>
-              <Button variant="outline" className="w-full justify-start" size="sm">
-                <FileText className="h-4 w-4 mr-2" />
-                Save Versions
-              </Button>
-            </CardContent>
-          </Card>
-
           <Card className="legal-card border-accent/20">
             <CardContent className="p-4">
               <div className="text-center">
                 <Eye className="h-8 w-8 text-accent mx-auto mb-2" />
                 <h3 className="font-semibold mb-2">Demo Mode</h3>
-                <p className="text-sm text-muted-foreground mb-3">
+                <p className="text-sm text-muted-foreground">
                   This is a demonstration version. Document simplification is for educational purposes only and does not constitute legal advice.
                 </p>
               </div>

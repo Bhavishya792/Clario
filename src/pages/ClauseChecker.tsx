@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, CheckCircle, FileText, Upload, Download, Eye, Shield, AlertCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, FileText, Upload, Download, Eye, Shield } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,8 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import apiService from "@/services/api";
 
 interface ClauseCheck {
   name: string;
@@ -18,22 +16,28 @@ interface ClauseCheck {
   recommendation: string;
 }
 
-interface ClauseCheckResult {
-  standardClauses: ClauseCheck[];
-  missingClauses: string[];
-  nonStandardClauses: string[];
-  overallRisk: number;
-}
-
 const ClauseChecker = () => {
   const { toast } = useToast();
-  const { isAuthenticated, user } = useAuth();
   const [documentText, setDocumentText] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [clauseChecks, setClauseChecks] = useState<ClauseCheckResult | null>(null);
+  const [clauseChecks, setClauseChecks] = useState<ClauseCheck[]>([]);
   const [overallRisk, setOverallRisk] = useState(0);
 
-  const analyzeDocument = async () => {
+  const sampleDocument = `WHEREAS, the Company, hereinafter referred to as "Company," and the Employee, hereinafter referred to as "Employee," desire to enter into an employment agreement pursuant to the terms and conditions set forth herein;
+
+NOW, THEREFORE, in consideration of the mutual covenants and agreements contained herein, and for other good and valuable consideration, the receipt and sufficiency of which are hereby acknowledged, the parties hereto agree as follows:
+
+1. EMPLOYMENT. The Company hereby employs the Employee, and the Employee hereby accepts employment with the Company, in accordance with the terms and conditions set forth in this Agreement.
+
+2. COMPENSATION. Notwithstanding the foregoing, the Employee shall be entitled to receive a base salary in the amount of $75,000 per annum, payable in accordance with the Company's standard payroll practices.
+
+3. CONFIDENTIALITY. The Employee acknowledges and agrees that, in connection with the Employee's employment hereunder, the Employee will have access to and become acquainted with various trade secrets, proprietary information, and confidential information belonging to the Company.
+
+4. TERMINATION. Either party may terminate this Agreement at any time, with or without cause, by providing written notice to the other party not less than thirty (30) days prior to the effective date of such termination.
+
+5. INDEMNIFICATION. The Employee shall indemnify and hold harmless the Company from and against any and all claims, damages, losses, costs, and expenses, including reasonable attorneys' fees, arising out of or in connection with the Employee's breach of this Agreement.`;
+
+  const analyzeDocument = () => {
     if (!documentText.trim()) {
       toast({
         title: "No Document",
@@ -45,9 +49,7 @@ const ClauseChecker = () => {
 
     setIsAnalyzing(true);
     
-    // Simulate analysis delay
     setTimeout(() => {
-      // Basic clause analysis without API calls
       const text = documentText.toLowerCase();
       
       const standardClauses: ClauseCheck[] = [
@@ -107,43 +109,31 @@ const ClauseChecker = () => {
         }
       ];
 
-      const missingClauses = standardClauses
-        .filter(clause => !clause.present)
-        .map(clause => clause.name);
-
       const highRiskClauses = standardClauses.filter(clause => 
         clause.riskLevel === 'high' || clause.riskLevel === 'critical'
       );
 
       const overallRisk = Math.round(
         (highRiskClauses.length / standardClauses.length) * 100 +
-        (missingClauses.length / standardClauses.length) * 50
+        (standardClauses.filter(c => !c.present).length / standardClauses.length) * 50
       );
 
-      const result: ClauseCheckResult = {
-        standardClauses,
-        missingClauses,
-        nonStandardClauses: [],
-        overallRisk
-      };
-
-      setClauseChecks(result);
+      setClauseChecks(standardClauses);
       setOverallRisk(overallRisk);
       
       toast({
         title: "Analysis Complete",
-        description: `Found ${standardClauses.length} clauses with ${missingClauses.length} missing.`,
+        description: `Found ${standardClauses.length} clauses with ${standardClauses.filter(c => !c.present).length} missing.`,
       });
       
       setIsAnalyzing(false);
     }, 2000);
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Simple file reading for demo purposes
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
@@ -170,45 +160,11 @@ const ClauseChecker = () => {
     switch (risk) {
       case 'critical': return AlertTriangle;
       case 'high': return AlertTriangle;
-      case 'medium': return AlertCircle;
+      case 'medium': return AlertTriangle;
       case 'low': return CheckCircle;
       default: return CheckCircle;
     }
   };
-
-  const getStatusIcon = (present: boolean) => {
-    return present ? CheckCircle : AlertTriangle;
-  };
-
-  const clauseTypes = [
-    { type: 'liability', label: 'Liability', icon: Shield },
-    { type: 'termination', label: 'Termination', icon: FileText },
-    { type: 'payment', label: 'Payment', icon: FileText },
-    { type: 'confidentiality', label: 'Confidentiality', icon: Shield },
-    { type: 'indemnification', label: 'Indemnification', icon: Shield },
-    { type: 'force-majeure', label: 'Force Majeure', icon: AlertTriangle },
-  ];
-
-  const getClauseTypeIcon = (name: string) => {
-    const clauseType = clauseTypes.find(ct => 
-      name.toLowerCase().includes(ct.type) || ct.label.toLowerCase().includes(name.toLowerCase())
-    );
-    return clauseType ? clauseType.icon : FileText;
-  };
-
-  const sampleDocument = `WHEREAS, the Company, hereinafter referred to as "Company," and the Employee, hereinafter referred to as "Employee," desire to enter into an employment agreement pursuant to the terms and conditions set forth herein;
-
-NOW, THEREFORE, in consideration of the mutual covenants and agreements contained herein, and for other good and valuable consideration, the receipt and sufficiency of which are hereby acknowledged, the parties hereto agree as follows:
-
-1. EMPLOYMENT. The Company hereby employs the Employee, and the Employee hereby accepts employment with the Company, in accordance with the terms and conditions set forth in this Agreement.
-
-2. COMPENSATION. Notwithstanding the foregoing, the Employee shall be entitled to receive a base salary in the amount of $75,000 per annum, payable in accordance with the Company's standard payroll practices.
-
-3. CONFIDENTIALITY. The Employee acknowledges and agrees that, in connection with the Employee's employment hereunder, the Employee will have access to and become acquainted with various trade secrets, proprietary information, and confidential information belonging to the Company.
-
-4. TERMINATION. Either party may terminate this Agreement at any time, with or without cause, by providing written notice to the other party not less than thirty (30) days prior to the effective date of such termination.
-
-5. INDEMNIFICATION. The Employee shall indemnify and hold harmless the Company from and against any and all claims, damages, losses, costs, and expenses, including reasonable attorneys' fees, arising out of or in connection with the Employee's breach of this Agreement.`;
 
   return (
     <div className="p-6 space-y-6 bg-gradient-to-br from-background via-secondary/20 to-background min-h-screen">
@@ -231,8 +187,7 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
           />
           <label htmlFor="file-upload">
             <Button variant="outline" asChild>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload
+              <span><Upload className="h-4 w-4 mr-2" />Upload</span>
             </Button>
           </label>
           <Button variant="outline" onClick={() => toast({ title: "Export Report", description: "Export feature coming soon!" })}>
@@ -298,7 +253,7 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
           </Card>
 
           {/* Analysis Results */}
-          {clauseChecks && (
+          {clauseChecks.length > 0 && (
             <Card className="legal-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -316,17 +271,16 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
                   </TabsList>
 
                   <TabsContent value="all" className="space-y-4">
-                    {clauseChecks.standardClauses.map((check, index) => {
+                    {clauseChecks.map((check, index) => {
                       const RiskIcon = getRiskIcon(check.riskLevel);
-                      const StatusIcon = getStatusIcon(check.present);
-                      const TypeIcon = getClauseTypeIcon(check.name);
+                      const StatusIcon = check.present ? CheckCircle : AlertTriangle;
                       
                       return (
                         <Card key={index} className="border-l-4 border-l-primary/20">
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between mb-3">
                               <div className="flex items-center gap-2">
-                                <TypeIcon className="h-4 w-4 text-muted-foreground" />
+                                <FileText className="h-4 w-4 text-muted-foreground" />
                                 <span className="font-medium">{check.name}</span>
                               </div>
                               <div className="flex gap-2">
@@ -363,17 +317,16 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
                   </TabsContent>
 
                   <TabsContent value="issues" className="space-y-4">
-                    {clauseChecks.standardClauses.filter(c => !c.present || c.riskLevel === 'high' || c.riskLevel === 'critical').map((check, index) => {
+                    {clauseChecks.filter(c => !c.present || c.riskLevel === 'high' || c.riskLevel === 'critical').map((check, index) => {
                       const RiskIcon = getRiskIcon(check.riskLevel);
-                      const StatusIcon = getStatusIcon(check.present);
-                      const TypeIcon = getClauseTypeIcon(check.name);
+                      const StatusIcon = check.present ? CheckCircle : AlertTriangle;
                       
                       return (
                         <Card key={index} className="border-l-4 border-l-warning/50">
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between mb-3">
                               <div className="flex items-center gap-2">
-                                <TypeIcon className="h-4 w-4 text-muted-foreground" />
+                                <FileText className="h-4 w-4 text-muted-foreground" />
                                 <span className="font-medium">{check.name}</span>
                               </div>
                               <div className="flex gap-2">
@@ -410,71 +363,63 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
                   </TabsContent>
 
                   <TabsContent value="standard" className="space-y-4">
-                    {clauseChecks.standardClauses.filter(c => c.present && c.riskLevel === 'low').map((check, index) => {
-                      const TypeIcon = getClauseTypeIcon(check.name);
-                      
-                      return (
-                        <Card key={index} className="border-l-4 border-l-success/50">
-                          <CardContent className="p-4">
-                            <div className="flex items-center gap-2 mb-3">
-                              <TypeIcon className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{check.name}</span>
-                              <Badge variant="success">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Standard
-                              </Badge>
+                    {clauseChecks.filter(c => c.present && c.riskLevel === 'low').map((check, index) => (
+                      <Card key={index} className="border-l-4 border-l-success/50">
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{check.name}</span>
+                            <Badge variant="success">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Standard
+                            </Badge>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground mb-1">Clause:</p>
+                              <p className="text-sm italic bg-muted/50 p-2 rounded">
+                                "{check.text}"
+                              </p>
                             </div>
                             
-                            <div className="space-y-2">
-                              <div>
-                                <p className="text-sm font-medium text-muted-foreground mb-1">Clause:</p>
-                                <p className="text-sm italic bg-muted/50 p-2 rounded">
-                                  "{check.text}"
-                                </p>
-                              </div>
-                              
-                              <div>
-                                <p className="text-sm font-medium text-muted-foreground mb-1">Status:</p>
-                                <p className="text-sm text-success">{check.recommendation}</p>
-                              </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground mb-1">Status:</p>
+                              <p className="text-sm text-success">{check.recommendation}</p>
                             </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </TabsContent>
 
                   <TabsContent value="missing" className="space-y-4">
-                    {clauseChecks.missingClauses.map((clause, index) => {
-                      const TypeIcon = getClauseTypeIcon(clause);
-                      
-                      return (
-                        <Card key={index} className="border-l-4 border-l-destructive/50">
-                          <CardContent className="p-4">
-                            <div className="flex items-center gap-2 mb-3">
-                              <TypeIcon className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{clause}</span>
-                              <Badge variant="destructive">
-                                <AlertTriangle className="h-3 w-3 mr-1" />
-                                Missing
-                              </Badge>
+                    {clauseChecks.filter(c => !c.present).map((clause, index) => (
+                      <Card key={index} className="border-l-4 border-l-destructive/50">
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{clause.name}</span>
+                            <Badge variant="destructive">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Missing
+                            </Badge>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground mb-1">Issue:</p>
+                              <p className="text-sm">This standard clause is missing from your document.</p>
                             </div>
                             
-                            <div className="space-y-2">
-                              <div>
-                                <p className="text-sm font-medium text-muted-foreground mb-1">Issue:</p>
-                                <p className="text-sm">This standard clause is missing from your document.</p>
-                              </div>
-                              
-                              <div>
-                                <p className="text-sm font-medium text-muted-foreground mb-1">Recommendation:</p>
-                                <p className="text-sm">Consider adding this clause to protect your interests and ensure compliance with standard practices.</p>
-                              </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground mb-1">Recommendation:</p>
+                              <p className="text-sm">Consider adding this clause to protect your interests and ensure compliance with standard practices.</p>
                             </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </TabsContent>
                 </Tabs>
               </CardContent>
@@ -509,7 +454,7 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
             </CardContent>
           </Card>
 
-          {clauseChecks && (
+          {clauseChecks.length > 0 && (
             <Card className="legal-card">
               <CardHeader>
                 <CardTitle>Clause Summary</CardTitle>
@@ -517,50 +462,30 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Total Clauses</span>
-                  <Badge variant="outline">{clauseChecks.standardClauses.length}</Badge>
+                  <Badge variant="outline">{clauseChecks.length}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Present</span>
-                  <Badge variant="success">{clauseChecks.standardClauses.filter(c => c.present).length}</Badge>
+                  <Badge variant="success">{clauseChecks.filter(c => c.present).length}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Missing</span>
-                  <Badge variant="destructive">{clauseChecks.missingClauses.length}</Badge>
+                  <Badge variant="destructive">{clauseChecks.filter(c => !c.present).length}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">High Risk</span>
-                  <Badge variant="warning">{clauseChecks.standardClauses.filter(c => c.riskLevel === 'high' || c.riskLevel === 'critical').length}</Badge>
+                  <Badge variant="warning">{clauseChecks.filter(c => c.riskLevel === 'high' || c.riskLevel === 'critical').length}</Badge>
                 </div>
               </CardContent>
             </Card>
           )}
-
-          <Card className="legal-card">
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start" size="sm">
-                <FileText className="h-4 w-4 mr-2" />
-                Generate Report
-              </Button>
-              <Button variant="outline" className="w-full justify-start" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Export Issues
-              </Button>
-              <Button variant="outline" className="w-full justify-start" size="sm">
-                <Eye className="h-4 w-4 mr-2" />
-                View Standards
-              </Button>
-            </CardContent>
-          </Card>
 
           <Card className="legal-card border-accent/20">
             <CardContent className="p-4">
               <div className="text-center">
                 <AlertTriangle className="h-8 w-8 text-accent mx-auto mb-2" />
                 <h3 className="font-semibold mb-2">Demo Mode</h3>
-                <p className="text-sm text-muted-foreground mb-3">
+                <p className="text-sm text-muted-foreground">
                   This is a demonstration version. Results are for educational purposes only and do not constitute legal advice.
                 </p>
               </div>
