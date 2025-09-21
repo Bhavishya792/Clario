@@ -318,6 +318,119 @@ class ApiService {
     }>(`/glossary/random/${count}`);
   }
 
+  // Dashboard methods
+  async getDashboardStats() {
+    return this.request<{
+      success: boolean;
+      data: {
+        stats: {
+          documents: number;
+          deadlines: number;
+          upcoming: number;
+          overdue: number;
+          highPriority: number;
+          compliance: number;
+        };
+        recentDocuments: any[];
+        upcomingDeadlines: any[];
+      };
+    }>('/dashboard/stats');
+  }
+
+  async generateHealthCheck() {
+    return this.request<{
+      success: boolean;
+      data: {
+        riskScore: number;
+        recommendations: any[];
+        summary: any;
+      };
+    }>('/dashboard/health-check');
+  }
+
+  // Deadline methods
+  async getDeadlines(params?: {
+    status?: string;
+    priority?: string;
+    category?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryParams.append(key, value.toString());
+        }
+      });
+    }
+
+    return this.request<{
+      success: boolean;
+      data: { deadlines: any[]; pagination: any };
+    }>(`/deadlines?${queryParams.toString()}`);
+  }
+
+  async getDeadline(id: string) {
+    return this.request<{
+      success: boolean;
+      data: { deadline: any };
+    }>(`/deadlines/${id}`);
+  }
+
+  async createDeadline(deadlineData: {
+    title: string;
+    description?: string;
+    dueDate: string;
+    priority: string;
+    category: string;
+    assignedTo?: string;
+    tags?: string[];
+    estimatedHours?: number;
+    cost?: number;
+  }) {
+    return this.request<{
+      success: boolean;
+      data: { deadline: any };
+    }>('/deadlines', {
+      method: 'POST',
+      body: JSON.stringify(deadlineData),
+    });
+  }
+
+  async updateDeadline(id: string, updateData: any) {
+    return this.request<{
+      success: boolean;
+      data: { deadline: any };
+    }>(`/deadlines/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+  }
+
+  async deleteDeadline(id: string) {
+    return this.request<{
+      success: boolean;
+      message: string;
+    }>(`/deadlines/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getUpcomingDeadlines(limit: number = 5) {
+    return this.request<{
+      success: boolean;
+      data: { deadlines: any[] };
+    }>(`/deadlines/upcoming?limit=${limit}`);
+  }
+
+  async getOverdueDeadlines() {
+    return this.request<{
+      success: boolean;
+      data: { deadlines: any[] };
+    }>('/deadlines/overdue');
+  }
+
   // Utility methods
   setToken(token: string) {
     this.token = token;

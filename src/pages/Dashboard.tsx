@@ -1,22 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar, FileText, AlertTriangle, BarChart3, Upload, Users, Bell, Settings } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import apiService from "@/services/api";
 
 const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [riskScore] = useState(72);
-  
-  const upcomingDeadlines = [
-    { title: "GST Filing", date: "Sep 30, 2025", daysLeft: 5, priority: "high", color: "bg-destructive" },
-    { title: "Trademark Renewal", date: "Oct 15, 2025", daysLeft: 20, priority: "medium", color: "bg-warning" },
-    { title: "Contract Review", date: "Oct 8, 2025", daysLeft: 13, priority: "low", color: "bg-success" },
-    { title: "Board Resolution", date: "Nov 2, 2025", daysLeft: 38, priority: "medium", color: "bg-warning" },
-  ];
+  const { user, isAuthenticated } = useAuth();
+  const [riskScore, setRiskScore] = useState(72);
+  const [stats, setStats] = useState({
+    documents: 0,
+    deadlines: 0,
+    upcoming: 0,
+    overdue: 0,
+    highPriority: 0,
+    compliance: 0
+  });
+  const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const quickActions = [
     { title: "Document Assistant", icon: FileText, description: "Generate legal documents", action: () => navigate('/documents') },
@@ -31,11 +37,59 @@ const Dashboard = () => {
     });
   };
 
-  const generateHealthCheckup = () => {
-    toast({
-      title: "Generating Legal Health Checkup",
-      description: "Your comprehensive legal health report is being prepared...",
-    });
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadDashboardData();
+    } else {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getDashboardStats();
+      
+      if (response.success) {
+        setStats(response.data.stats);
+        setUpcomingDeadlines(response.data.upcomingDeadlines);
+      }
+    } catch (error: any) {
+      console.error('Error loading dashboard data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateHealthCheckup = async () => {
+    try {
+      toast({
+        title: "Generating Legal Health Checkup",
+        description: "Your comprehensive legal health report is being prepared...",
+      });
+
+      const response = await apiService.generateHealthCheck();
+      
+      if (response.success) {
+        setRiskScore(response.data.riskScore);
+        toast({
+          title: "Health Check Complete",
+          description: `Your legal risk score is ${response.data.riskScore}%. Check recommendations for details.`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error generating health check:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate health checkup",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -43,7 +97,9 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Welcome, Startup!</h1>
+          <h1 className="text-3xl font-bold text-foreground">
+            Welcome, {user?.firstName || 'User'}!
+          </h1>
           <p className="text-muted-foreground">Here's your legal health overview</p>
         </div>
         <div className="flex gap-2">
@@ -66,7 +122,7 @@ const Dashboard = () => {
             <div className="flex items-center space-x-2">
               <FileText className="h-8 w-8 text-primary" />
               <div>
-                <p className="text-2xl font-bold">24</p>
+                <p className="text-2xl font-bold">{loading ? '...' : stats.documents}</p>
                 <p className="text-sm text-muted-foreground">Documents</p>
               </div>
             </div>
@@ -78,7 +134,7 @@ const Dashboard = () => {
             <div className="flex items-center space-x-2">
               <Calendar className="h-8 w-8 text-warning" />
               <div>
-                <p className="text-2xl font-bold">7</p>
+                <p className="text-2xl font-bold">{loading ? '...' : stats.deadlines}</p>
                 <p className="text-sm text-muted-foreground">Deadlines</p>
               </div>
             </div>
@@ -90,7 +146,7 @@ const Dashboard = () => {
             <div className="flex items-center space-x-2">
               <AlertTriangle className="h-8 w-8 text-destructive" />
               <div>
-                <p className="text-2xl font-bold">2</p>
+                <p className="text-2xl font-bold">{loading ? '...' : stats.highPriority}</p>
                 <p className="text-sm text-muted-foreground">High Priority</p>
               </div>
             </div>
@@ -102,7 +158,7 @@ const Dashboard = () => {
             <div className="flex items-center space-x-2">
               <BarChart3 className="h-8 w-8 text-success" />
               <div>
-                <p className="text-2xl font-bold">92%</p>
+                <p className="text-2xl font-bold">{loading ? '...' : `${stats.compliance}%`}</p>
                 <p className="text-sm text-muted-foreground">Compliance</p>
               </div>
             </div>
@@ -165,21 +221,49 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {upcomingDeadlines.map((deadline, index) => (
-                <div key={index} className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${deadline.color}`}></div>
-                    <div>
-                      <p className="font-medium">{deadline.title}</p>
-                      <p className="text-sm text-muted-foreground">{deadline.date}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">{deadline.daysLeft} days</p>
-                    <p className="text-xs text-muted-foreground">remaining</p>
-                  </div>
+              {loading ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                  <p className="text-sm text-muted-foreground mt-2">Loading deadlines...</p>
                 </div>
-              ))}
+              ) : upcomingDeadlines.length > 0 ? (
+                upcomingDeadlines.map((deadline, index) => {
+                  const dueDate = new Date(deadline.dueDate);
+                  const today = new Date();
+                  const daysLeft = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                  
+                  const getPriorityColor = (priority) => {
+                    switch (priority) {
+                      case 'critical': return 'bg-destructive';
+                      case 'high': return 'bg-destructive';
+                      case 'medium': return 'bg-warning';
+                      case 'low': return 'bg-success';
+                      default: return 'bg-muted';
+                    }
+                  };
+
+                  return (
+                    <div key={deadline._id || index} className="flex items-center justify-between p-3 rounded-lg border">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${getPriorityColor(deadline.priority)}`}></div>
+                        <div>
+                          <p className="font-medium">{deadline.title}</p>
+                          <p className="text-sm text-muted-foreground">{dueDate.toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{daysLeft} days</p>
+                        <p className="text-xs text-muted-foreground">remaining</p>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-4">
+                  <Calendar className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No upcoming deadlines</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

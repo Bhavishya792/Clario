@@ -13,6 +13,8 @@ const authRoutes = require('./routes/auth');
 const documentRoutes = require('./routes/documents');
 const aiRoutes = require('./routes/ai');
 const glossaryRoutes = require('./routes/glossary');
+const deadlineRoutes = require('./routes/deadlines');
+const dashboardRoutes = require('./routes/dashboard');
 
 const app = express();
 
@@ -69,6 +71,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/glossary', glossaryRoutes);
+app.use('/api/deadlines', deadlineRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

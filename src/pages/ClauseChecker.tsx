@@ -43,87 +43,117 @@ const ClauseChecker = () => {
       return;
     }
 
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to use the clause checker.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (user?.subscription === 'free') {
-      toast({
-        title: "Upgrade Required",
-        description: "Clause checking requires a Pro subscription. Please upgrade to continue.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setIsAnalyzing(true);
     
-    try {
-      const response = await apiService.checkStandardClauses(documentText);
+    // Simulate analysis delay
+    setTimeout(() => {
+      // Basic clause analysis without API calls
+      const text = documentText.toLowerCase();
       
-      if (response.success) {
-        setClauseChecks(response.data.clauseCheck);
-        setOverallRisk(response.data.clauseCheck.overallRisk || 0);
-        
-        toast({
-          title: "Analysis Complete",
-          description: `Found ${response.data.clauseCheck.standardClauses.length} clauses with ${response.data.clauseCheck.missingClauses.length} missing.`,
-        });
-      }
-    } catch (error: any) {
-      console.error('Clause analysis error:', error);
+      const standardClauses: ClauseCheck[] = [
+        {
+          name: "Liability Limitation",
+          present: text.includes('liability') && text.includes('limit'),
+          text: text.includes('liability') ? "Liability limitation clause found" : undefined,
+          riskLevel: text.includes('liability') && text.includes('limit') ? 'low' : 'high',
+          recommendation: text.includes('liability') && text.includes('limit') 
+            ? "Good: Liability limitation clause is present and properly structured."
+            : "Warning: Consider adding a liability limitation clause to protect against excessive damages."
+        },
+        {
+          name: "Termination Clause",
+          present: text.includes('termination') || text.includes('terminate'),
+          text: text.includes('termination') ? "Termination clause found" : undefined,
+          riskLevel: text.includes('termination') ? 'low' : 'medium',
+          recommendation: text.includes('termination') 
+            ? "Good: Termination clause is present."
+            : "Consider adding a clear termination clause specifying when and how the agreement can be ended."
+        },
+        {
+          name: "Payment Terms",
+          present: text.includes('payment') || text.includes('compensation') || text.includes('salary'),
+          text: text.includes('payment') ? "Payment terms found" : undefined,
+          riskLevel: text.includes('payment') ? 'low' : 'high',
+          recommendation: text.includes('payment') 
+            ? "Good: Payment terms are clearly defined."
+            : "Critical: Payment terms must be clearly specified to avoid disputes."
+        },
+        {
+          name: "Confidentiality",
+          present: text.includes('confidential') || text.includes('non-disclosure'),
+          text: text.includes('confidential') ? "Confidentiality clause found" : undefined,
+          riskLevel: text.includes('confidential') ? 'low' : 'medium',
+          recommendation: text.includes('confidential') 
+            ? "Good: Confidentiality protection is in place."
+            : "Consider adding confidentiality provisions to protect sensitive information."
+        },
+        {
+          name: "Indemnification",
+          present: text.includes('indemnif') || text.includes('hold harmless'),
+          text: text.includes('indemnif') ? "Indemnification clause found" : undefined,
+          riskLevel: text.includes('indemnif') ? 'low' : 'medium',
+          recommendation: text.includes('indemnif') 
+            ? "Good: Indemnification clause provides protection."
+            : "Consider adding indemnification provisions to allocate risk appropriately."
+        },
+        {
+          name: "Force Majeure",
+          present: text.includes('force majeure') || text.includes('act of god'),
+          text: text.includes('force majeure') ? "Force majeure clause found" : undefined,
+          riskLevel: text.includes('force majeure') ? 'low' : 'low',
+          recommendation: text.includes('force majeure') 
+            ? "Good: Force majeure protection is included."
+            : "Optional: Force majeure clause can protect against unforeseen circumstances."
+        }
+      ];
+
+      const missingClauses = standardClauses
+        .filter(clause => !clause.present)
+        .map(clause => clause.name);
+
+      const highRiskClauses = standardClauses.filter(clause => 
+        clause.riskLevel === 'high' || clause.riskLevel === 'critical'
+      );
+
+      const overallRisk = Math.round(
+        (highRiskClauses.length / standardClauses.length) * 100 +
+        (missingClauses.length / standardClauses.length) * 50
+      );
+
+      const result: ClauseCheckResult = {
+        standardClauses,
+        missingClauses,
+        nonStandardClauses: [],
+        overallRisk
+      };
+
+      setClauseChecks(result);
+      setOverallRisk(overallRisk);
+      
       toast({
-        title: "Analysis Failed",
-        description: error.message || "Failed to analyze document clauses",
-        variant: "destructive"
+        title: "Analysis Complete",
+        description: `Found ${standardClauses.length} clauses with ${missingClauses.length} missing.`,
       });
-    } finally {
+      
       setIsAnalyzing(false);
-    }
+    }, 2000);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!isAuthenticated) {
+    // Simple file reading for demo purposes
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      setDocumentText(text);
       toast({
-        title: "Authentication Required",
-        description: "Please log in to upload and analyze documents.",
-        variant: "destructive"
+        title: "Document Loaded",
+        description: "Document loaded successfully. You can now analyze it.",
       });
-      return;
-    }
-
-    try {
-      setIsAnalyzing(true);
-      const response = await apiService.uploadDocument(file, {
-        title: file.name,
-        type: 'other'
-      });
-
-      if (response.success) {
-        setDocumentText(response.data.document.content.original);
-        toast({
-          title: "Document Uploaded",
-          description: "Document uploaded successfully. You can now analyze it.",
-        });
-      }
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      toast({
-        title: "Upload Failed",
-        description: error.message || "Failed to upload document",
-        variant: "destructive"
-      });
-    } finally {
-      setIsAnalyzing(false);
-    }
+    };
+    reader.readAsText(file);
   };
 
   const getRiskColor = (risk: string) => {
@@ -525,39 +555,17 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
             </CardContent>
           </Card>
 
-          {!isAuthenticated && (
-            <Card className="legal-card border-warning/20">
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <AlertTriangle className="h-8 w-8 text-warning mx-auto mb-2" />
-                  <h3 className="font-semibold mb-2">Sign in required</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Please sign in to use the clause checker
-                  </p>
-                  <Button variant="outline" size="sm" className="w-full">
-                    Sign In
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {isAuthenticated && user?.subscription === 'free' && (
-            <Card className="legal-card border-accent/20">
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <Sparkles className="h-8 w-8 text-accent mx-auto mb-2" />
-                  <h3 className="font-semibold mb-2">Upgrade to Pro</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Get access to AI-powered clause checking
-                  </p>
-                  <Button variant="professional" size="sm" className="w-full">
-                    Upgrade Now
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <Card className="legal-card border-accent/20">
+            <CardContent className="p-4">
+              <div className="text-center">
+                <AlertTriangle className="h-8 w-8 text-accent mx-auto mb-2" />
+                <h3 className="font-semibold mb-2">Demo Mode</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  This is a demonstration version. Results are for educational purposes only and do not constitute legal advice.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

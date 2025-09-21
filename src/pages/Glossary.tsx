@@ -51,57 +51,249 @@ const Glossary = () => {
     { value: 'general', label: 'General' }
   ];
 
-  const fetchTerms = async () => {
-    try {
-      setLoading(true);
-      const response = await apiService.getGlossaryTerms({
-        search: searchTerm || undefined,
-        category: selectedCategory === 'all' ? undefined : selectedCategory,
-        sort: sortBy,
-        page: 1,
-        limit: 20
-      });
-
-      if (response.success) {
-        setTerms(response.data.terms);
-        setPagination(response.data.pagination);
+  const sampleTerms: LegalTerm[] = [
+    {
+      _id: "1",
+      term: "indemnification",
+      displayTerm: "Indemnification",
+      definition: "A contractual obligation where one party agrees to compensate another party for losses, damages, or liabilities incurred as a result of specified events or circumstances.",
+      category: "contract",
+      complexity: "intermediate",
+      examples: [
+        "The contractor shall indemnify the client against any claims arising from the contractor's negligence.",
+        "Each party agrees to indemnify the other against third-party claims related to intellectual property infringement."
+      ],
+      relatedTerms: [],
+      synonyms: ["hold harmless", "compensate", "reimburse"],
+      usage: {
+        frequency: "Very Common",
+        contexts: ["Contracts", "Service Agreements", "Employment Agreements"]
       }
-    } catch (error: any) {
-      console.error('Error fetching terms:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load legal terms",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+    },
+    {
+      _id: "2",
+      term: "force-majeure",
+      displayTerm: "Force Majeure",
+      definition: "A contractual provision that excuses a party from performing its obligations when circumstances beyond their control prevent performance.",
+      category: "contract",
+      complexity: "intermediate",
+      examples: [
+        "The pandemic was declared a force majeure event, excusing delayed delivery.",
+        "Natural disasters, war, and government actions are typically included in force majeure clauses."
+      ],
+      relatedTerms: [],
+      synonyms: ["act of god", "unforeseen circumstances", "impossibility"],
+      usage: {
+        frequency: "Common",
+        contexts: ["Contracts", "Supply Agreements", "Service Contracts"]
+      }
+    },
+    {
+      _id: "3",
+      term: "liability",
+      displayTerm: "Liability",
+      definition: "Legal responsibility for one's acts or omissions, which may result in legal obligation to pay damages or perform specific actions.",
+      category: "liability",
+      complexity: "basic",
+      examples: [
+        "The company accepted liability for the defective product.",
+        "Limited liability protects shareholders from personal financial responsibility."
+      ],
+      relatedTerms: [],
+      synonyms: ["responsibility", "accountability", "obligation"],
+      usage: {
+        frequency: "Very Common",
+        contexts: ["All Legal Documents", "Contracts", "Corporate Law"]
+      }
+    },
+    {
+      _id: "4",
+      term: "confidentiality",
+      displayTerm: "Confidentiality",
+      definition: "The obligation to keep certain information secret and not disclose it to unauthorized parties.",
+      category: "contract",
+      complexity: "basic",
+      examples: [
+        "The employee signed a confidentiality agreement to protect trade secrets.",
+        "Confidentiality clauses prevent disclosure of sensitive business information."
+      ],
+      relatedTerms: [],
+      synonyms: ["non-disclosure", "secrecy", "privacy"],
+      usage: {
+        frequency: "Very Common",
+        contexts: ["Employment Agreements", "NDAs", "Service Contracts"]
+      }
+    },
+    {
+      _id: "5",
+      term: "termination",
+      displayTerm: "Termination",
+      definition: "The act of ending or canceling a contract, agreement, or employment relationship before its natural expiration.",
+      category: "contract",
+      complexity: "basic",
+      examples: [
+        "Either party may terminate this agreement with 30 days written notice.",
+        "Termination for cause allows immediate contract cancellation due to breach."
+      ],
+      relatedTerms: [],
+      synonyms: ["cancellation", "ending", "dissolution"],
+      usage: {
+        frequency: "Very Common",
+        contexts: ["All Contracts", "Employment Agreements", "Service Contracts"]
+      }
+    },
+    {
+      _id: "6",
+      term: "breach",
+      displayTerm: "Breach",
+      definition: "A violation or failure to perform a legal obligation, duty, or contractual term.",
+      category: "contract",
+      complexity: "basic",
+      examples: [
+        "The supplier's failure to deliver on time constituted a material breach.",
+        "Breach of contract may result in damages or contract termination."
+      ],
+      relatedTerms: [],
+      synonyms: ["violation", "infringement", "non-compliance"],
+      usage: {
+        frequency: "Very Common",
+        contexts: ["Contract Law", "Litigation", "All Legal Documents"]
+      }
+    },
+    {
+      _id: "7",
+      term: "intellectual-property",
+      displayTerm: "Intellectual Property",
+      definition: "Legal rights protecting creations of the mind, including patents, trademarks, copyrights, and trade secrets.",
+      category: "intellectual-property",
+      complexity: "intermediate",
+      examples: [
+        "The company's intellectual property portfolio includes 50 patents.",
+        "Intellectual property rights protect innovations and creative works."
+      ],
+      relatedTerms: [],
+      synonyms: ["IP", "proprietary rights", "creative assets"],
+      usage: {
+        frequency: "Common",
+        contexts: ["Technology Agreements", "Licensing", "Corporate Transactions"]
+      }
+    },
+    {
+      _id: "8",
+      term: "consideration",
+      displayTerm: "Consideration",
+      definition: "Something of value exchanged between parties to a contract, making the contract legally binding.",
+      category: "contract",
+      complexity: "intermediate",
+      examples: [
+        "The consideration for this agreement is the payment of $10,000.",
+        "Valid consideration is required for a contract to be enforceable."
+      ],
+      relatedTerms: [],
+      synonyms: ["payment", "compensation", "benefit"],
+      usage: {
+        frequency: "Common",
+        contexts: ["Contract Formation", "Legal Analysis", "All Contracts"]
+      }
+    },
+    {
+      _id: "9",
+      term: "warranty",
+      displayTerm: "Warranty",
+      definition: "A promise or guarantee about the quality, condition, or performance of goods or services.",
+      category: "contract",
+      complexity: "basic",
+      examples: [
+        "The product comes with a one-year warranty against defects.",
+        "Express warranties are explicitly stated, while implied warranties are assumed by law."
+      ],
+      relatedTerms: [],
+      synonyms: ["guarantee", "assurance", "promise"],
+      usage: {
+        frequency: "Common",
+        contexts: ["Sales Agreements", "Service Contracts", "Product Liability"]
+      }
+    },
+    {
+      _id: "10",
+      term: "arbitration",
+      displayTerm: "Arbitration",
+      definition: "A method of dispute resolution where parties agree to have their case decided by an impartial third party rather than going to court.",
+      category: "litigation",
+      complexity: "intermediate",
+      examples: [
+        "The contract requires arbitration for all disputes.",
+        "Arbitration is often faster and less expensive than litigation."
+      ],
+      relatedTerms: [],
+      synonyms: ["mediation", "alternative dispute resolution", "ADR"],
+      usage: {
+        frequency: "Common",
+        contexts: ["Dispute Resolution", "Contracts", "Commercial Agreements"]
+      }
     }
+  ];
+
+  const fetchTerms = async () => {
+    setLoading(true);
+    
+    // Simulate API delay
+    setTimeout(() => {
+      let filteredTerms = sampleTerms;
+      
+      // Apply search filter
+      if (searchTerm) {
+        filteredTerms = filteredTerms.filter(term => 
+          term.term.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          term.definition.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          term.synonyms.some(syn => syn.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+      }
+      
+      // Apply category filter
+      if (selectedCategory !== 'all') {
+        filteredTerms = filteredTerms.filter(term => term.category === selectedCategory);
+      }
+      
+      // Apply sorting
+      if (sortBy === 'alphabetical') {
+        filteredTerms.sort((a, b) => a.displayTerm.localeCompare(b.displayTerm));
+      } else if (sortBy === 'category') {
+        filteredTerms.sort((a, b) => a.category.localeCompare(b.category));
+      } else if (sortBy === 'complexity') {
+        const complexityOrder = { basic: 1, intermediate: 2, advanced: 3 };
+        filteredTerms.sort((a, b) => complexityOrder[a.complexity] - complexityOrder[b.complexity]);
+      }
+      
+      setTerms(filteredTerms);
+      setPagination({
+        current: 1,
+        pages: 1,
+        total: filteredTerms.length
+      });
+      setLoading(false);
+    }, 500);
   };
 
   const fetchCategories = async () => {
-    try {
-      const response = await apiService.getGlossaryCategories();
-      if (response.success) {
-        setCategories(response.data.categories);
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
+    // Generate categories from sample data
+    const categoryCounts = sampleTerms.reduce((acc, term) => {
+      acc[term.category] = (acc[term.category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const categoriesData = Object.entries(categoryCounts).map(([category, count]) => ({
+      category,
+      count
+    }));
+    
+    setCategories(categoriesData);
   };
 
   const fetchTermDetails = async (id: string) => {
-    try {
-      const response = await apiService.getGlossaryTerm(id);
-      if (response.success) {
-        setSelectedTerm(response.data.term);
-      }
-    } catch (error: any) {
-      console.error('Error fetching term details:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load term details",
-        variant: "destructive"
-      });
+    const term = sampleTerms.find(t => t._id === id);
+    if (term) {
+      setSelectedTerm(term);
     }
   };
 

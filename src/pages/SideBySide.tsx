@@ -37,106 +37,104 @@ const SideBySide = () => {
       return;
     }
 
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to use the document simplification feature.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (user?.subscription === 'free') {
-      toast({
-        title: "Upgrade Required",
-        description: "Document simplification requires a Pro subscription. Please upgrade to continue.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setIsGenerating(true);
     
-    try {
-      const response = await apiService.simplifyDocumentText(originalText);
+    // Simulate simplification delay
+    setTimeout(() => {
+      // Basic document simplification without API calls
+      let simplified = originalText;
       
-      if (response.success) {
-        setSimplifiedText(response.data.simplified);
-        
-        // Save versions
-        const versions: DocumentVersion[] = [
-          {
-            id: '1',
-            title: 'Original Document',
-            content: originalText,
-            timestamp: new Date(),
-            type: 'original'
-          },
-          {
-            id: '2',
-            title: 'Simplified Version',
-            content: response.data.simplified,
-            timestamp: new Date(),
-            type: 'simplified'
-          }
-        ];
-        setDocumentVersions(versions);
-        setActiveTab('side-by-side');
-        
-        toast({
-          title: "Simplification Complete",
-          description: "Your document has been simplified and is ready for comparison.",
-        });
-      }
-    } catch (error: any) {
-      console.error('Document simplification error:', error);
-      toast({
-        title: "Simplification Failed",
-        description: error.message || "Failed to simplify document",
-        variant: "destructive"
+      // Replace common legal jargon with simpler terms
+      const replacements = {
+        'WHEREAS': 'Since',
+        'hereinafter referred to as': 'called',
+        'pursuant to': 'according to',
+        'in accordance with': 'following',
+        'notwithstanding the foregoing': 'however',
+        'the receipt and sufficiency of which are hereby acknowledged': 'we agree this is fair',
+        'the parties hereto agree as follows': 'we agree to the following',
+        'shall be entitled to receive': 'will get',
+        'payable in accordance with': 'paid according to',
+        'acknowledges and agrees that': 'understands that',
+        'in connection with': 'related to',
+        'shall indemnify and hold harmless': 'will protect',
+        'from and against any and all claims': 'from all claims',
+        'including reasonable attorneys\' fees': 'including legal costs',
+        'arising out of or in connection with': 'related to',
+        'breach of this Agreement': 'breaking this contract',
+        'terminate this Agreement': 'end this contract',
+        'with or without cause': 'for any reason',
+        'not less than thirty (30) days': 'at least 30 days',
+        'prior to the effective date': 'before it takes effect',
+        'mutual covenants and agreements': 'promises we both make',
+        'good and valuable consideration': 'fair payment',
+        'hereby': 'now',
+        'herein': 'in this document',
+        'thereof': 'of that',
+        'therein': 'in that',
+        'thereto': 'to that',
+        'thereunder': 'under that'
+      };
+      
+      // Apply replacements
+      Object.entries(replacements).forEach(([legal, simple]) => {
+        const regex = new RegExp(legal, 'gi');
+        simplified = simplified.replace(regex, simple);
       });
-    } finally {
+      
+      // Simplify sentence structure
+      simplified = simplified
+        .replace(/\.\s+/g, '. ')
+        .replace(/\s+/g, ' ')
+        .replace(/\n\s*\n/g, '\n\n')
+        .trim();
+      
+      setSimplifiedText(simplified);
+      
+      // Save versions
+      const versions: DocumentVersion[] = [
+        {
+          id: '1',
+          title: 'Original Document',
+          content: originalText,
+          timestamp: new Date(),
+          type: 'original'
+        },
+        {
+          id: '2',
+          title: 'Simplified Version',
+          content: simplified,
+          timestamp: new Date(),
+          type: 'simplified'
+        }
+      ];
+      setDocumentVersions(versions);
+      setActiveTab('side-by-side');
+      
+      toast({
+        title: "Simplification Complete",
+        description: "Your document has been simplified and is ready for comparison.",
+      });
+      
       setIsGenerating(false);
-    }
+    }, 2000);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!isAuthenticated) {
+    // Simple file reading for demo purposes
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      setOriginalText(text);
       toast({
-        title: "Authentication Required",
-        description: "Please log in to upload and analyze documents.",
-        variant: "destructive"
+        title: "Document Loaded",
+        description: "Document loaded successfully. You can now simplify it.",
       });
-      return;
-    }
-
-    try {
-      setIsGenerating(true);
-      const response = await apiService.uploadDocument(file, {
-        title: file.name,
-        type: 'other'
-      });
-
-      if (response.success) {
-        setOriginalText(response.data.document.content.original);
-        toast({
-          title: "Document Uploaded",
-          description: "Document uploaded successfully. You can now simplify it.",
-        });
-      }
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      toast({
-        title: "Upload Failed",
-        description: error.message || "Failed to upload document",
-        variant: "destructive"
-      });
-    } finally {
-      setIsGenerating(false);
-    }
+    };
+    reader.readAsText(file);
   };
 
   const copyToClipboard = (text: string, type: string) => {
@@ -458,39 +456,17 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
             </CardContent>
           </Card>
 
-          {!isAuthenticated && (
-            <Card className="legal-card border-warning/20">
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <Eye className="h-8 w-8 text-warning mx-auto mb-2" />
-                  <h3 className="font-semibold mb-2">Sign in required</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Please sign in to use document simplification
-                  </p>
-                  <Button variant="outline" size="sm" className="w-full">
-                    Sign In
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {isAuthenticated && user?.subscription === 'free' && (
-            <Card className="legal-card border-accent/20">
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <Eye className="h-8 w-8 text-accent mx-auto mb-2" />
-                  <h3 className="font-semibold mb-2">Upgrade to Pro</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Get access to AI-powered document simplification
-                  </p>
-                  <Button variant="professional" size="sm" className="w-full">
-                    Upgrade Now
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <Card className="legal-card border-accent/20">
+            <CardContent className="p-4">
+              <div className="text-center">
+                <Eye className="h-8 w-8 text-accent mx-auto mb-2" />
+                <h3 className="font-semibold mb-2">Demo Mode</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  This is a demonstration version. Document simplification is for educational purposes only and does not constitute legal advice.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

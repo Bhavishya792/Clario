@@ -64,30 +64,66 @@ const AIChat = () => {
     setInputMessage('');
     setIsLoading(true);
 
-    try {
+    // Simulate AI response delay
+    setTimeout(() => {
       let aiResponse: Message;
 
       if (documentText && !inputMessage) {
         // Document analysis mode
         setIsAnalyzing(true);
-        const analysis = await apiService.analyzeClauses(documentText);
+        
+        // Basic clause analysis without API calls
+        const clauses = documentText.split('\n').filter(line => 
+          line.trim().length > 0 && 
+          (line.includes('.') || line.includes(':') || line.includes(';'))
+        ).slice(0, 5); // Limit to 5 clauses for demo
+        
+        const clauseAnalysis: ClauseAnalysis[] = clauses.map((clause, index) => ({
+          clause: clause.trim(),
+          analysis: `This clause appears to be ${index % 2 === 0 ? 'standard' : 'non-standard'} and ${index % 3 === 0 ? 'low' : index % 3 === 1 ? 'medium' : 'high'} risk.`,
+          riskLevel: index % 3 === 0 ? 'low' : index % 3 === 1 ? 'medium' : 'high',
+          suggestions: [
+            'Consider reviewing this clause with legal counsel',
+            'Ensure compliance with applicable laws',
+            'Verify all terms are clearly defined'
+          ]
+        }));
         
         aiResponse = {
           id: (Date.now() + 1).toString(),
           type: 'ai',
           content: 'I\'ve analyzed your document and found several clauses that need attention. Here\'s my clause-by-clause breakdown:',
           timestamp: new Date(),
-          clauseAnalysis: analysis.data.analysis.clauses || [],
+          clauseAnalysis,
         };
         setDocumentText('');
       } else {
-        // Regular chat mode
-        const response = await apiService.chatWithAI(inputMessage, documentText);
+        // Regular chat mode with basic responses
+        const message = inputMessage.toLowerCase();
+        let response = '';
+        
+        if (message.includes('indemnification') || message.includes('indemnify')) {
+          response = 'Indemnification is a contractual obligation where one party agrees to compensate another party for losses, damages, or liabilities. It\'s a way to allocate risk between parties in a contract. The indemnifying party promises to "hold harmless" the other party from certain claims or losses.';
+        } else if (message.includes('liability') || message.includes('liable')) {
+          response = 'Liability refers to legal responsibility for one\'s acts or omissions. In contracts, liability clauses define who is responsible for what damages and to what extent. Limited liability clauses can cap the amount of damages one party can be held responsible for.';
+        } else if (message.includes('termination') || message.includes('terminate')) {
+          response = 'Termination clauses specify how and when a contract can be ended. They typically include notice periods, reasons for termination (with or without cause), and what happens to obligations after termination. Proper termination clauses protect both parties\' interests.';
+        } else if (message.includes('confidential') || message.includes('nda')) {
+          response = 'Confidentiality agreements (NDAs) protect sensitive information shared between parties. Key elements include: definition of confidential information, obligations of the receiving party, exceptions to confidentiality, duration of the agreement, and remedies for breach.';
+        } else if (message.includes('force majeure')) {
+          response = 'Force majeure clauses excuse parties from performing contractual obligations when circumstances beyond their control prevent performance. Common events include natural disasters, war, government actions, and pandemics. These clauses should be carefully drafted to cover relevant scenarios.';
+        } else if (message.includes('breach') || message.includes('breach of contract')) {
+          response = 'A breach of contract occurs when one party fails to perform their obligations under the contract. Remedies can include damages, specific performance, or contract termination. Material breaches are serious violations that go to the heart of the contract, while minor breaches may only entitle the non-breaching party to damages.';
+        } else if (message.includes('hello') || message.includes('hi') || message.includes('help')) {
+          response = 'Hello! I\'m Clario\'s AI legal assistant. I can help explain legal terms, analyze contract clauses, and provide general legal information. I can discuss topics like indemnification, liability, termination clauses, confidentiality agreements, force majeure, and breach of contract. What would you like to know?';
+        } else {
+          response = 'I\'m here to help with legal questions and document analysis. I can explain legal terms, discuss contract clauses, and provide general legal information. Please note that this is for educational purposes only and does not constitute legal advice. For specific legal matters, please consult with a qualified attorney.';
+        }
         
         aiResponse = {
           id: (Date.now() + 1).toString(),
           type: 'ai',
-          content: response.data.response,
+          content: response,
           timestamp: new Date(),
         };
       }
@@ -98,66 +134,27 @@ const AIChat = () => {
         title: "Analysis Complete",
         description: documentText ? "AI has finished analyzing your document." : "AI has responded to your message.",
       });
-    } catch (error: any) {
-      console.error('AI Chat error:', error);
       
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'ai',
-        content: `I apologize, but I encountered an error: ${error.message}. Please try again or contact support if the issue persists.`,
-        timestamp: new Date(),
-      };
-
-      setMessages(prev => [...prev, errorMessage]);
-      
-      toast({
-        title: "Error",
-        description: error.message || "Failed to process your request",
-        variant: "destructive"
-      });
-    } finally {
       setIsLoading(false);
       setIsAnalyzing(false);
-    }
+    }, 1500);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!isAuthenticated) {
+    // Simple file reading for demo purposes
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      setDocumentText(text);
       toast({
-        title: "Authentication Required",
-        description: "Please log in to upload and analyze documents.",
-        variant: "destructive"
+        title: "Document Loaded",
+        description: "Document loaded successfully. You can now analyze it.",
       });
-      return;
-    }
-
-    try {
-      setIsAnalyzing(true);
-      const response = await apiService.uploadDocument(file, {
-        title: file.name,
-        type: 'other'
-      });
-
-      if (response.success) {
-        setDocumentText(response.data.document.content.original);
-        toast({
-          title: "Document Uploaded",
-          description: "Document uploaded successfully. You can now analyze it.",
-        });
-      }
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      toast({
-        title: "Upload Failed",
-        description: error.message || "Failed to upload document",
-        variant: "destructive"
-      });
-    } finally {
-      setIsAnalyzing(false);
-    }
+    };
+    reader.readAsText(file);
   };
 
   const getRiskColor = (risk: string) => {
